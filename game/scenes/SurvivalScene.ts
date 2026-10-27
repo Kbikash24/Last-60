@@ -3,7 +3,6 @@ import { audio } from "@/lib/audio";
 import {
   COLORS,
   COUNTDOWN_SECONDS,
-  JOYSTICK_RADIUS,
   NEAR_MISS_DISTANCE,
   PLAYER_HITBOX,
   PLAYER_RADIUS,
@@ -20,7 +19,14 @@ import type { RunOutcome, RunStatus } from "../types";
 
 const SNAPSHOT_INTERVAL = 0.1;
 const MAX_FRAME_SECONDS = 0.05;
-const JOYSTICK_DEADZONE = 0.15;
+const JOYSTICK_DEADZONE = 0.1;
+const JOYSTICK_FULL_SPEED = 0.85;
+/** Joystick radius in CSS pixels on screen. */
+const JOYSTICK_SCREEN_PX = 60;
+const JOYSTICK_RADIUS_MIN = 40;
+const JOYSTICK_RADIUS_MAX = 130;
+/** Higher is snappier; about 55 ms to reach most of a new direction. */
+const TOUCH_SMOOTHING = 18;
 
 export class SurvivalScene extends Phaser.Scene implements SceneControls {
   private status: RunStatus = "countdown";
@@ -49,7 +55,16 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     "up" | "down" | "left" | "right",
     Phaser.Input.Keyboard.Key
   >;
-  private joystick = { active: false, baseX: 0, baseY: 0, x: 0, y: 0 };
+  private joystick: {
+    active: boolean;
+    pointer: Phaser.Input.Pointer | null;
+    baseX: number;
+    baseY: number;
+    x: number;
+    y: number;
+  } = { active: false, pointer: null, baseX: 0, baseY: 0, x: 0, y: 0 };
+  private smoothX = 0;
+  private smoothY = 0;
 
   constructor(private readonly controller: GameController) {
     super("Survival");
@@ -86,7 +101,6 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     keyboard.on("keydown-R", this.onRetryKey, this);
 
     this.input.on("pointerdown", this.onPointerDown, this);
-    this.input.on("pointermove", this.onPointerMove, this);
     this.input.on("pointerup", this.onPointerUp, this);
     this.input.on("pointerupoutside", this.onPointerUp, this);
     document.addEventListener("visibilitychange", this.onVisibilityChange);
@@ -135,6 +149,8 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     for (const p of this.popups) p.destroy();
     this.popups.length = 0;
     this.releaseJoystick();
+    this.smoothX = 0;
+    this.smoothY = 0;
     this.cameras.main.resetFX();
     this.border.setStrokeStyle(3, getPhase(0).color, 1);
     this.player.setPosition(this.width / 2, this.height / 2);
@@ -258,9 +274,18 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
       const len = Math.hypot(x, y);
       x /= len;
       y /= len;
-    } else if (this.joystick.active) {
-      x = this.joystick.x;
-      y = this.joystick.y;
+      this.smoothX = x;
+      this.smoothY = y;
+    } else {
+      // Touch input is eased so small finger jitter does not twitch the player.
+      if (this.joystick.active) this.updateJoystick();
+      const k = 1 - Math.exp(-dt * TOUCH_SMOOTHING);
+      this.smoothX += (this.joystick.x - this.smoothX) * k;
+      this.smoothY += (this.joystick.y - this.smoothY) * k;
+      if (Math.abs(this.smoothX) < 0.01) this.smoothX = 0;
+      if (Math.abs(this.smoothY) < 0.01) this.smoothY = 0;
+      x = this.smoothX;
+      y = this.smoothY;
     }
 
     const nx = Phaser.Math.Clamp(
@@ -388,35 +413,54 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.status !== "playing" && this.status !== "countdown") return;
+    if (this.joystick.active) return;
     this.joystick.active = true;
+    this.joystick.pointer = pointer;
     this.joystick.baseX = pointer.x;
     this.joystick.baseY = pointer.y;
-    this.updateJoystick(pointer);
+    this.updateJoystick();
   }
 
-  private onPointerMove(pointer: Phaser.Input.Pointer): void {
-    if (this.joystick.active && pointer.isDown) this.updateJoystick(pointer);
+  private onPointerUp(pointer: Phaser.Input.Pointer): void {
+    if (this.joystick.pointer === pointer) this.releaseJoystick();
   }
 
-  private onPointerUp(): void {
-    this.releaseJoystick();
+  /** Radius is sized in screen pixels so it feels the same however the canvas is scaled. */
+  private joystickRadius(): number {
+    return Phaser.Math.Clamp(
+      JOYSTICK_SCREEN_PX * this.scale.displayScale.x,
+      JOYSTICK_RADIUS_MIN,
+      JOYSTICK_RADIUS_MAX,
+    );
   }
 
   /** Floating joystick: the base follows the finger once it is dragged past the radius. */
-  private updateJoystick(pointer: Phaser.Input.Pointer): void {
+  private updateJoystick(): void {
     const j = this.joystick;
+    const pointer = j.pointer;
+    if (!pointer || !pointer.isDown) {
+      this.releaseJoystick();
+      return;
+    }
+    const radius = this.joystickRadius();
     let dx = pointer.x - j.baseX;
     let dy = pointer.y - j.baseY;
     const dist = Math.hypot(dx, dy);
-    if (dist > JOYSTICK_RADIUS) {
-      const k = JOYSTICK_RADIUS / dist;
+    if (dist > radius) {
+      const k = radius / dist;
       j.baseX = pointer.x - dx * k;
       j.baseY = pointer.y - dy * k;
       dx = pointer.x - j.baseX;
       dy = pointer.y - j.baseY;
     }
-    const mag = Math.min(1, Math.hypot(dx, dy) / JOYSTICK_RADIUS);
-    if (mag < JOYSTICK_DEADZONE) {
+    // Ramp from the deadzone up to full speed instead of jumping.
+    const raw = Math.hypot(dx, dy) / radius;
+    const mag = Phaser.Math.Clamp(
+      (raw - JOYSTICK_DEADZONE) / (JOYSTICK_FULL_SPEED - JOYSTICK_DEADZONE),
+      0,
+      1,
+    );
+    if (mag === 0) {
       j.x = 0;
       j.y = 0;
     } else {
@@ -427,13 +471,14 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     this.joystickGfx
       .clear()
       .lineStyle(2, COLORS.cyan, 0.5)
-      .strokeCircle(j.baseX, j.baseY, JOYSTICK_RADIUS)
+      .strokeCircle(j.baseX, j.baseY, radius)
       .fillStyle(COLORS.cyan, 0.35)
-      .fillCircle(j.baseX + dx, j.baseY + dy, 22);
+      .fillCircle(j.baseX + dx, j.baseY + dy, radius * 0.4);
   }
 
   private releaseJoystick(): void {
     this.joystick.active = false;
+    this.joystick.pointer = null;
     this.joystick.x = 0;
     this.joystick.y = 0;
     this.joystickGfx?.clear();
