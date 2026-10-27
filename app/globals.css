@@ -1,0 +1,331 @@
+@import "tailwindcss";
+
+:root {
+  --background: #07060f;
+  --foreground: #ecebff;
+  --neon-cyan: #22e4ff;
+  --neon-purple: #a855f7;
+  --neon-pink: #ff3d8b;
+  --panel: rgba(18, 15, 40, 0.88);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-purple: var(--neon-purple);
+  --color-neon-pink: var(--neon-pink);
+  --color-panel: var(--panel);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  /* Dark overlay keeps the HUD and menu text readable over the image. */
+  background:
+    linear-gradient(rgba(7, 6, 15, 0.5), rgba(7, 6, 15, 0.7)),
+    url("/arena-bg.png") center / cover no-repeat,
+    var(--background);
+  background-attachment: fixed;
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+}
+
+.title-glow {
+  background: linear-gradient(
+    90deg,
+    var(--neon-cyan),
+    var(--neon-purple) 60%,
+    var(--neon-pink)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.45));
+}
+
+/* Layered 3D logo: a stacked-shadow extrusion behind a gradient face. */
+.logo-3d {
+  position: relative;
+  display: inline-block;
+  filter: drop-shadow(0 0 0.12em var(--glow));
+}
+
+.logo-3d-face,
+.logo-3d-back {
+  display: inline-block;
+  /* Right/bottom padding keeps italic overhang inside the gradient's box. */
+  padding: 0.04em 0.22em 0.14em 0.1em;
+}
+
+.logo-3d-face {
+  position: relative;
+  background: var(--face);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0.02em var(--edge);
+}
+
+.logo-3d-back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--deep);
+  pointer-events: none;
+  user-select: none;
+  text-shadow:
+    0.012em 0.012em 0 var(--deep),
+    0.024em 0.024em 0 var(--deep),
+    0.036em 0.036em 0 var(--deep),
+    0.048em 0.048em 0 var(--deep),
+    0.06em 0.06em 0 var(--deep),
+    0.072em 0.072em 0 var(--deep-2),
+    0.084em 0.084em 0 var(--deep-2),
+    0.096em 0.096em 0 var(--deep-2),
+    0.108em 0.108em 0 var(--deep-2),
+    0.12em 0.12em 0 var(--deep-2);
+}
+
+.logo-last {
+  --face: linear-gradient(180deg, #a6f3ff 0%, #27a3ff 50%, #2f4dff 100%);
+  --edge: rgba(210, 248, 255, 0.85);
+  --deep: #1038b8;
+  --deep-2: #081a66;
+  --glow: rgba(34, 140, 255, 0.65);
+}
+
+.logo-60 {
+  --face: linear-gradient(180deg, #ff74dc 0%, #ff3d8b 50%, #ff9a3d 100%);
+  --edge: rgba(255, 220, 240, 0.85);
+  --deep: #b3125f;
+  --deep-2: #5a0836;
+  --glow: rgba(255, 61, 139, 0.6);
+}
+
+.neon-panel {
+  border-radius: 1rem;
+  border: 1.5px solid rgba(34, 228, 255, 0.55);
+  background: rgba(8, 10, 32, 0.78);
+  box-shadow:
+    0 0 22px rgba(34, 228, 255, 0.18),
+    inset 0 0 24px rgba(168, 85, 247, 0.1);
+  backdrop-filter: blur(6px);
+}
+
+.results-panel {
+  border-radius: 1.5rem;
+  border: 2px solid transparent;
+  background:
+    linear-gradient(rgba(8, 10, 30, 0.94), rgba(8, 10, 30, 0.94)) padding-box,
+    linear-gradient(135deg, #22e4ff, #8b5cf6 50%, #ff3dd0) border-box;
+  box-shadow:
+    0 0 28px rgba(34, 228, 255, 0.25),
+    0 0 40px rgba(255, 61, 208, 0.2);
+}
+
+.stat-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.9rem;
+  border: 1.5px solid color-mix(in srgb, var(--c) 75%, transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--c) 16%, #080a20),
+    #080a20 90%
+  );
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--c) 30%, transparent),
+    inset 0 0 12px color-mix(in srgb, var(--c) 12%, transparent);
+}
+
+.stat-tile-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.65rem;
+  font-size: 1.5rem;
+  color: var(--c);
+  border: 1.5px solid color-mix(in srgb, var(--c) 70%, transparent);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.stat-tile-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--c) 65%, white);
+}
+
+.retry-ring {
+  padding: 4px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(130, 140, 255, 0.55);
+}
+
+.btn-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1.5px solid rgba(139, 92, 246, 0.7);
+  background: rgba(30, 20, 70, 0.7);
+  transition: background 0.12s ease;
+}
+
+.btn-dark:hover {
+  background: rgba(139, 92, 246, 0.3);
+}
+
+.phase-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.85rem;
+  color: var(--c);
+  border: 1.5px solid var(--c);
+  background: rgba(8, 10, 32, 0.78);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--c) 35%, transparent);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 3.5rem;
+  padding: 0.75rem 3rem;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: linear-gradient(90deg, #1fa2ff, #6a5cff 50%, #ff3dd0);
+  box-shadow:
+    0 0 26px rgba(80, 130, 255, 0.55),
+    0 0 40px rgba(255, 61, 208, 0.3);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px rgba(34, 228, 255, 0.55);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  border: 1px solid rgba(168, 85, 247, 0.55);
+  background: rgba(168, 85, 247, 0.12);
+  transition: background 0.12s ease;
+}
+
+.btn-ghost:hover {
+  background: rgba(168, 85, 247, 0.28);
+}
+
+:is(a, button):focus-visible {
+  outline: 3px solid var(--neon-cyan);
+  outline-offset: 3px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes banner {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  15%,
+  75% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.anim-fade-in {
+  animation: fade-in 0.35s ease both;
+}
+.anim-fade-in-late {
+  animation: fade-in 0.4s ease 0.5s both;
+}
+.anim-pop {
+  animation: pop 0.9s ease both;
+}
+.anim-banner {
+  animation: banner 2s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-in,
+  .anim-fade-in-late,
+  .anim-pop,
+  .anim-banner {
+    animation: none;
+  }
+  .btn-primary,
+  .btn-ghost {
+    transition: none;
+  }
+  .btn-primary:hover {
+    transform: none;
+  }
+}
