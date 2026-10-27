@@ -19,14 +19,10 @@ import type { RunOutcome, RunStatus } from "../types";
 
 const SNAPSHOT_INTERVAL = 0.1;
 const MAX_FRAME_SECONDS = 0.05;
-const JOYSTICK_DEADZONE = 0.1;
-const JOYSTICK_FULL_SPEED = 0.85;
-/** Joystick radius in CSS pixels on screen. */
-const JOYSTICK_SCREEN_PX = 60;
-const JOYSTICK_RADIUS_MIN = 40;
-const JOYSTICK_RADIUS_MAX = 130;
-/** Higher is snappier; about 55 ms to reach most of a new direction. */
-const TOUCH_SMOOTHING = 18;
+/** How tightly the player tracks the finger; higher feels more glued to it. */
+const DRAG_FOLLOW = 40;
+/** Speed cap while dragging, a little above keyboard speed so it keeps up with a finger. */
+const DRAG_MAX_SPEED = 650;
 
 export class SurvivalScene extends Phaser.Scene implements SceneControls {
   private status: RunStatus = "countdown";
@@ -46,7 +42,6 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
   private spawner!: ObstacleSpawner;
   private particles!: ParticleBurst;
   private border!: Phaser.GameObjects.Rectangle;
-  private joystickGfx!: Phaser.GameObjects.Graphics;
   private popups: Phaser.GameObjects.Text[] = [];
   private readonly score = new ScoreManager();
 
@@ -55,16 +50,14 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     "up" | "down" | "left" | "right",
     Phaser.Input.Keyboard.Key
   >;
-  private joystick: {
-    active: boolean;
+  // The player keeps its offset from the finger, so it moves exactly as the finger does.
+  private drag: {
     pointer: Phaser.Input.Pointer | null;
-    baseX: number;
-    baseY: number;
-    x: number;
-    y: number;
-  } = { active: false, pointer: null, baseX: 0, baseY: 0, x: 0, y: 0 };
-  private smoothX = 0;
-  private smoothY = 0;
+    fingerX: number;
+    fingerY: number;
+    playerX: number;
+    playerY: number;
+  } = { pointer: null, fingerX: 0, fingerY: 0, playerX: 0, playerY: 0 };
 
   constructor(private readonly controller: GameController) {
     super("Survival");
@@ -86,7 +79,6 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     );
     this.player = new Player(this);
     this.particles = new ParticleBurst(this);
-    this.joystickGfx = this.add.graphics().setDepth(20);
 
     const keyboard = this.input.keyboard!;
     this.cursors = keyboard.createCursorKeys();
@@ -122,7 +114,7 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     if (this.status !== "playing" && this.status !== "countdown") return;
     this.statusBeforePause = this.status;
     this.status = "paused";
-    this.releaseJoystick();
+    this.releaseDrag();
     this.emitSnapshot();
   }
 
@@ -148,9 +140,7 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
     this.tweens.killAll();
     for (const p of this.popups) p.destroy();
     this.popups.length = 0;
-    this.releaseJoystick();
-    this.smoothX = 0;
-    this.smoothY = 0;
+    this.releaseDrag();
     this.cameras.main.resetFX();
     this.border.setStrokeStyle(3, getPhase(0).color, 1);
     this.player.setPosition(this.width / 2, this.height / 2);
@@ -161,7 +151,7 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
   private endRun(outcome: RunOutcome): void {
     if (this.status === "gameover" || this.status === "victory") return;
     this.status = outcome;
-    this.releaseJoystick();
+    this.releaseDrag();
 
     if (outcome === "gameover") {
       this.player.setVisible(false);
@@ -274,18 +264,9 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
       const len = Math.hypot(x, y);
       x /= len;
       y /= len;
-      this.smoothX = x;
-      this.smoothY = y;
-    } else {
-      // Touch input is eased so small finger jitter does not twitch the player.
-      if (this.joystick.active) this.updateJoystick();
-      const k = 1 - Math.exp(-dt * TOUCH_SMOOTHING);
-      this.smoothX += (this.joystick.x - this.smoothX) * k;
-      this.smoothY += (this.joystick.y - this.smoothY) * k;
-      if (Math.abs(this.smoothX) < 0.01) this.smoothX = 0;
-      if (Math.abs(this.smoothY) < 0.01) this.smoothY = 0;
-      x = this.smoothX;
-      y = this.smoothY;
+    } else if (this.drag.pointer) {
+      this.followFinger(dt);
+      return;
     }
 
     const nx = Phaser.Math.Clamp(
@@ -413,75 +394,52 @@ export class SurvivalScene extends Phaser.Scene implements SceneControls {
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.status !== "playing" && this.status !== "countdown") return;
-    if (this.joystick.active) return;
-    this.joystick.active = true;
-    this.joystick.pointer = pointer;
-    this.joystick.baseX = pointer.x;
-    this.joystick.baseY = pointer.y;
-    this.updateJoystick();
+    if (this.drag.pointer) return;
+    this.drag.pointer = pointer;
+    this.drag.fingerX = pointer.x;
+    this.drag.fingerY = pointer.y;
+    this.drag.playerX = this.player.x;
+    this.drag.playerY = this.player.y;
   }
 
   private onPointerUp(pointer: Phaser.Input.Pointer): void {
-    if (this.joystick.pointer === pointer) this.releaseJoystick();
+    if (this.drag.pointer === pointer) this.releaseDrag();
   }
 
-  /** Radius is sized in screen pixels so it feels the same however the canvas is scaled. */
-  private joystickRadius(): number {
-    return Phaser.Math.Clamp(
-      JOYSTICK_SCREEN_PX * this.scale.displayScale.x,
-      JOYSTICK_RADIUS_MIN,
-      JOYSTICK_RADIUS_MAX,
-    );
-  }
-
-  /** Floating joystick: the base follows the finger once it is dragged past the radius. */
-  private updateJoystick(): void {
-    const j = this.joystick;
-    const pointer = j.pointer;
+  /** Moves the player by the same distance the finger has moved since touch-down. */
+  private followFinger(dt: number): void {
+    const d = this.drag;
+    const pointer = d.pointer;
     if (!pointer || !pointer.isDown) {
-      this.releaseJoystick();
+      this.releaseDrag();
       return;
     }
-    const radius = this.joystickRadius();
-    let dx = pointer.x - j.baseX;
-    let dy = pointer.y - j.baseY;
-    const dist = Math.hypot(dx, dy);
-    if (dist > radius) {
-      const k = radius / dist;
-      j.baseX = pointer.x - dx * k;
-      j.baseY = pointer.y - dy * k;
-      dx = pointer.x - j.baseX;
-      dy = pointer.y - j.baseY;
+    const minX = PLAYER_RADIUS;
+    const maxX = this.width - PLAYER_RADIUS;
+    const minY = PLAYER_RADIUS;
+    const maxY = this.height - PLAYER_RADIUS;
+    const rawX = d.playerX + (pointer.x - d.fingerX);
+    const rawY = d.playerY + (pointer.y - d.fingerY);
+    const targetX = Phaser.Math.Clamp(rawX, minX, maxX);
+    const targetY = Phaser.Math.Clamp(rawY, minY, maxY);
+    // Re-anchor at the walls so reversing the finger responds immediately.
+    d.playerX += targetX - rawX;
+    d.playerY += targetY - rawY;
+
+    const k = 1 - Math.exp(-dt * DRAG_FOLLOW);
+    let stepX = (targetX - this.player.x) * k;
+    let stepY = (targetY - this.player.y) * k;
+    const maxStep = DRAG_MAX_SPEED * dt;
+    const len = Math.hypot(stepX, stepY);
+    if (len > maxStep) {
+      stepX *= maxStep / len;
+      stepY *= maxStep / len;
     }
-    // Ramp from the deadzone up to full speed instead of jumping.
-    const raw = Math.hypot(dx, dy) / radius;
-    const mag = Phaser.Math.Clamp(
-      (raw - JOYSTICK_DEADZONE) / (JOYSTICK_FULL_SPEED - JOYSTICK_DEADZONE),
-      0,
-      1,
-    );
-    if (mag === 0) {
-      j.x = 0;
-      j.y = 0;
-    } else {
-      const len = Math.hypot(dx, dy) || 1;
-      j.x = (dx / len) * mag;
-      j.y = (dy / len) * mag;
-    }
-    this.joystickGfx
-      .clear()
-      .lineStyle(2, COLORS.cyan, 0.5)
-      .strokeCircle(j.baseX, j.baseY, radius)
-      .fillStyle(COLORS.cyan, 0.35)
-      .fillCircle(j.baseX + dx, j.baseY + dy, radius * 0.4);
+    this.player.setPosition(this.player.x + stepX, this.player.y + stepY);
   }
 
-  private releaseJoystick(): void {
-    this.joystick.active = false;
-    this.joystick.pointer = null;
-    this.joystick.x = 0;
-    this.joystick.y = 0;
-    this.joystickGfx?.clear();
+  private releaseDrag(): void {
+    this.drag.pointer = null;
   }
 
   private cleanup(): void {
