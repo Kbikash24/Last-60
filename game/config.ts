@@ -13,10 +13,10 @@ export const NEAR_MISS_DISTANCE = 16;
 export const JOYSTICK_RADIUS = 56;
 
 export const COLORS = {
-  bg: 0x07060f,
-  grid: 0x1a1740,
-  cyan: 0x22e4ff,
-  purple: 0xa855f7,
+  bg: 0x050a18,
+  grid: 0x12224d,
+  cyan: 0x2d8cff,
+  purple: 0x4f6bff,
   hazard: 0xff3d8b,
   hazardEdge: 0xffd0e2,
   wall: 0xff9a3d,

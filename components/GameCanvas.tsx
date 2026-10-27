@@ -12,6 +12,7 @@ import { arenaSize } from "@/game/config";
 import type { GameController } from "@/game/controller";
 import type { GameSnapshot, RunResult } from "@/game/types";
 import { audio } from "@/lib/audio";
+import { requestRunToken } from "@/lib/leaderboard";
 import { recordRun, type Stats } from "@/lib/storage";
 import Countdown from "./Countdown";
 import GameHUD from "./GameHUD";
@@ -31,11 +32,14 @@ interface FinishedRun {
   run: RunResult;
   stats: Stats;
   isNewBest: boolean;
+  /** Proof the run started on the server; null if the leaderboard is unavailable. */
+  token: string | null;
 }
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<GameController | null>(null);
+  const runTokenRef = useRef<string | null>(null);
   // Arena orientation is fixed per mount; later rotation only rescales the canvas.
   const [size] = useState(() =>
     arenaSize(window.innerHeight > window.innerWidth * 1.1),
@@ -52,6 +56,9 @@ export default function GameCanvas() {
   useEffect(() => {
     let disposed = false;
     let controller: GameController | null = null;
+    // Guards against a slow token response from an earlier run landing on a newer one.
+    let runSeq = 0;
+    let tokenRequested = false;
 
     import("@/game/createGame")
       .then(({ createGame }) => {
@@ -61,10 +68,23 @@ export default function GameCanvas() {
           parent,
           width: size.width,
           height: size.height,
-          onSnapshot: setSnap,
+          onSnapshot: (s) => {
+            setSnap(s);
+            if (s.status === "countdown") {
+              runSeq++;
+              tokenRequested = false;
+              runTokenRef.current = null;
+            } else if (s.status === "playing" && !tokenRequested) {
+              tokenRequested = true;
+              const seq = runSeq;
+              void requestRunToken().then((token) => {
+                if (!disposed && seq === runSeq) runTokenRef.current = token;
+              });
+            }
+          },
           onFinish: (run) => {
             const { stats, isNewBest } = recordRun(run);
-            setFinished({ run, stats, isNewBest });
+            setFinished({ run, stats, isNewBest, token: runTokenRef.current });
           },
         });
         controllerRef.current = controller;
@@ -139,7 +159,7 @@ export default function GameCanvas() {
       >
         <div
           ref={containerRef}
-          className="absolute inset-0 touch-none overflow-hidden rounded-xl border border-neon-cyan/40 shadow-[0_0_40px_rgba(34,228,255,0.15)]"
+          className="absolute inset-0 touch-none overflow-hidden rounded-xl border border-neon-cyan/40 shadow-[0_0_40px_rgba(45,140,255,0.2)]"
         />
 
         {snap.status === "countdown" && <Countdown value={snap.countdown} />}
@@ -158,7 +178,7 @@ export default function GameCanvas() {
           snap.elapsed >= 0.8 && (
             <p
               key={snap.phaseIndex}
-              className="anim-banner pointer-events-none absolute inset-x-0 top-3 text-center text-lg font-black uppercase tracking-widest text-neon-cyan drop-shadow-[0_0_8px_rgba(34,228,255,0.8)]"
+              className="anim-banner pointer-events-none absolute inset-x-0 top-3 text-center text-lg font-black uppercase tracking-widest text-neon-cyan drop-shadow-[0_0_8px_rgba(45,140,255,0.8)]"
               aria-hidden="true"
             >
               {snap.phaseName}
@@ -193,6 +213,7 @@ export default function GameCanvas() {
               result={finished.run}
               stats={finished.stats}
               isNewBest={finished.isNewBest}
+              token={finished.token}
               onRetry={retry}
             />
           )}

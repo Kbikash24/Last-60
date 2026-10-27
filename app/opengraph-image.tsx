@@ -16,7 +16,7 @@ export default function OpengraphImage() {
         alignItems: "center",
         justifyContent: "center",
         background:
-          "linear-gradient(135deg, #07060f 0%, #1a1245 55%, #2a0a3d 100%)",
+          "linear-gradient(135deg, #050a18 0%, #0c1f5c 55%, #1646d9 100%)",
         color: "#ecebff",
         fontFamily: "sans-serif",
       }}
@@ -30,10 +30,10 @@ export default function OpengraphImage() {
           letterSpacing: -4,
         }}
       >
-        <span style={{ color: "#3aa8ff", textShadow: "8px 8px 0 #0a1f7a" }}>
+        <span style={{ color: "#2d7bff", textShadow: "8px 8px 0 #0a1f7a" }}>
           LAST&nbsp;
         </span>
-        <span style={{ color: "#ff3d8b", textShadow: "8px 8px 0 #5a0836" }}>
+        <span style={{ color: "#8fd0ff", textShadow: "8px 8px 0 #1646d9" }}>
           60
         </span>
       </div>
@@ -47,7 +47,7 @@ export default function OpengraphImage() {
       >
         {SITE_TAGLINE}
       </div>
-      <div style={{ marginTop: 36, fontSize: 30, color: "#22e4ff" }}>
+      <div style={{ marginTop: 36, fontSize: 30, color: "#5aa8ff" }}>
         {`${SITE_NAME} · Free browser arcade survival game · agentstacks.in`}
       </div>
     </div>,

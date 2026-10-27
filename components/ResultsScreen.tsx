@@ -16,11 +16,13 @@ import {
 } from "./icons";
 import { Logo3D } from "./Logo3D";
 import ShareScore from "./ShareScore";
+import SubmitScore from "./SubmitScore";
 
 interface Props {
   result: RunResult;
   stats: Stats;
   isNewBest: boolean;
+  token: string | null;
   onRetry(): void;
 }
 
@@ -28,6 +30,7 @@ export default function ResultsScreen({
   result,
   stats,
   isNewBest,
+  token,
   onRetry,
 }: Props) {
   const won = result.outcome === "victory";
@@ -61,7 +64,7 @@ export default function ResultsScreen({
 
         <dl className="grid w-full grid-cols-2 gap-2 text-left sm:gap-3">
           <Tile
-            color="#22e4ff"
+            color="#4da3ff"
             icon={<TimerIcon />}
             label="Survival time"
             value={`${result.survivalTime.toFixed(1)}s`}
@@ -98,11 +101,12 @@ export default function ResultsScreen({
           />
         </dl>
 
+        {token && result.score > 0 && (
+          <SubmitScore run={result} token={token} />
+        )}
+
         <div className="mt-1 flex w-full items-center gap-2">
-          <span
-            className="text-2xl font-black text-cyan-300"
-            aria-hidden="true"
-          >
+          <span className="text-2xl font-black text-sky-400" aria-hidden="true">
             «
           </span>
           <div className="retry-ring flex-1">
@@ -117,16 +121,20 @@ export default function ResultsScreen({
             </button>
           </div>
           <span
-            className="text-2xl font-black text-violet-400"
+            className="text-2xl font-black text-blue-400"
             aria-hidden="true"
           >
             »
           </span>
         </div>
 
-        <div className="grid w-full grid-cols-2 gap-2 sm:gap-3">
-          <ShareScore result={result} className="btn-dark w-full" />
-          <Link href="/" className="btn-dark w-full">
+        <div className="grid w-full grid-cols-3 gap-2 sm:gap-3">
+          <ShareScore result={result} className="btn-dark w-full !px-2" />
+          <Link href="/leaderboard" className="btn-dark w-full !px-2">
+            <TrophyIcon className="text-xl" />
+            Ranks
+          </Link>
+          <Link href="/" className="btn-dark w-full !px-2">
             <HomeIcon className="text-xl" />
             MENU
           </Link>

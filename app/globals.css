@@ -1,12 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #07060f;
-  --foreground: #ecebff;
-  --neon-cyan: #22e4ff;
-  --neon-purple: #a855f7;
+  --background: #050a18;
+  --foreground: #e8f0ff;
+  /* Names are historical; the theme is electric blue. */
+  --neon-cyan: #2d8cff;
+  --neon-purple: #4f6bff;
   --neon-pink: #ff3d8b;
-  --panel: rgba(18, 15, 40, 0.88);
+  --panel: rgba(10, 18, 42, 0.88);
 }
 
 @theme inline {
@@ -23,7 +24,7 @@
 body {
   /* Dark overlay keeps the HUD and menu text readable over the image. */
   background:
-    linear-gradient(rgba(7, 6, 15, 0.5), rgba(7, 6, 15, 0.7)),
+    linear-gradient(rgba(5, 10, 24, 0.5), rgba(5, 10, 24, 0.7)),
     url("/arena-bg.webp") center / cover no-repeat,
     var(--background);
   background-attachment: fixed;
@@ -41,12 +42,12 @@ canvas {
     90deg,
     var(--neon-cyan),
     var(--neon-purple) 60%,
-    var(--neon-pink)
+    #8fd0ff
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.45));
+  filter: drop-shadow(0 0 18px rgba(79, 107, 255, 0.45));
 }
 
 /* Layered 3D logo: a stacked-shadow extrusion behind a gradient face. */
@@ -98,28 +99,28 @@ canvas {
 }
 
 .logo-last {
-  --face: linear-gradient(180deg, #a6f3ff 0%, #27a3ff 50%, #2f4dff 100%);
-  --edge: rgba(210, 248, 255, 0.85);
+  --face: linear-gradient(180deg, #8fc4ff 0%, #2d7bff 50%, #1646d9 100%);
+  --edge: rgba(210, 232, 255, 0.85);
   --deep: #1038b8;
   --deep-2: #081a66;
-  --glow: rgba(34, 140, 255, 0.65);
+  --glow: rgba(45, 123, 255, 0.65);
 }
 
 .logo-60 {
-  --face: linear-gradient(180deg, #ff74dc 0%, #ff3d8b 50%, #ff9a3d 100%);
-  --edge: rgba(255, 220, 240, 0.85);
-  --deep: #b3125f;
-  --deep-2: #5a0836;
-  --glow: rgba(255, 61, 139, 0.6);
+  --face: linear-gradient(180deg, #d6ecff 0%, #6db4ff 50%, #2d8cff 100%);
+  --edge: rgba(240, 248, 255, 0.9);
+  --deep: #1a56c8;
+  --deep-2: #0a2a7a;
+  --glow: rgba(109, 180, 255, 0.6);
 }
 
 .neon-panel {
   border-radius: 1rem;
-  border: 1.5px solid rgba(34, 228, 255, 0.55);
-  background: rgba(8, 10, 32, 0.78);
+  border: 1.5px solid rgba(45, 140, 255, 0.55);
+  background: rgba(6, 12, 34, 0.78);
   box-shadow:
-    0 0 22px rgba(34, 228, 255, 0.18),
-    inset 0 0 24px rgba(168, 85, 247, 0.1);
+    0 0 22px rgba(45, 140, 255, 0.2),
+    inset 0 0 24px rgba(79, 107, 255, 0.1);
   backdrop-filter: blur(6px);
 }
 
@@ -127,11 +128,11 @@ canvas {
   border-radius: 1.5rem;
   border: 2px solid transparent;
   background:
-    linear-gradient(rgba(8, 10, 30, 0.94), rgba(8, 10, 30, 0.94)) padding-box,
-    linear-gradient(135deg, #22e4ff, #8b5cf6 50%, #ff3dd0) border-box;
+    linear-gradient(rgba(6, 12, 32, 0.94), rgba(6, 12, 32, 0.94)) padding-box,
+    linear-gradient(135deg, #5aa8ff, #2d7bff 50%, #4f6bff) border-box;
   box-shadow:
-    0 0 28px rgba(34, 228, 255, 0.25),
-    0 0 40px rgba(255, 61, 208, 0.2);
+    0 0 28px rgba(45, 140, 255, 0.28),
+    0 0 40px rgba(79, 107, 255, 0.2);
 }
 
 .stat-tile {
@@ -190,13 +191,13 @@ canvas {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border: 1.5px solid rgba(139, 92, 246, 0.7);
-  background: rgba(30, 20, 70, 0.7);
+  border: 1.5px solid rgba(79, 107, 255, 0.7);
+  background: rgba(14, 24, 70, 0.7);
   transition: background 0.12s ease;
 }
 
 .btn-dark:hover {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(79, 107, 255, 0.3);
 }
 
 .phase-chip {
@@ -224,10 +225,10 @@ canvas {
   color: #fff;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
   border: 2px solid rgba(255, 255, 255, 0.35);
-  background: linear-gradient(90deg, #22e4ff, #1fa2ff 45%, #6a5cff);
+  background: linear-gradient(90deg, #4da3ff, #2d7bff 50%, #1646d9);
   box-shadow:
-    0 0 26px rgba(80, 130, 255, 0.55),
-    0 0 40px rgba(34, 228, 255, 0.3);
+    0 0 26px rgba(45, 123, 255, 0.6),
+    0 0 40px rgba(45, 140, 255, 0.3);
   transition:
     transform 0.12s ease,
     box-shadow 0.12s ease;
@@ -235,7 +236,7 @@ canvas {
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 32px rgba(34, 228, 255, 0.55);
+  box-shadow: 0 0 32px rgba(45, 140, 255, 0.65);
 }
 
 .btn-ghost {
@@ -248,13 +249,13 @@ canvas {
   padding: 0.5rem 1.25rem;
   border-radius: 0.75rem;
   font-weight: 700;
-  border: 1px solid rgba(168, 85, 247, 0.55);
-  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(79, 107, 255, 0.55);
+  background: rgba(79, 107, 255, 0.12);
   transition: background 0.12s ease;
 }
 
 .btn-ghost:hover {
-  background: rgba(168, 85, 247, 0.28);
+  background: rgba(79, 107, 255, 0.28);
 }
 
 :is(a, button):focus-visible {

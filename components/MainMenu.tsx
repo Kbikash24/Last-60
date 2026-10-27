@@ -29,7 +29,7 @@ interface PhaseChip {
 }
 
 const PHASES: PhaseChip[] = [
-  { name: "Warm-up", color: "#22e4ff", Icon: TimerIcon },
+  { name: "Warm-up", color: "#4da3ff", Icon: TimerIcon },
   { name: "Speed Up", color: "#2ee6a6", Icon: GaugeIcon },
   { name: "Crossfire", color: "#ffc23d", Icon: TargetIcon },
   { name: "Chaos", color: "#ff7a3d", Icon: BoltIcon },
@@ -116,7 +116,7 @@ export default function MainMenu() {
               </p>
             </li>
             <li className="flex flex-col items-center gap-1 px-3 py-3 text-center">
-              <WarningIcon className="text-4xl text-fuchsia-400" />
+              <WarningIcon className="text-4xl text-blue-400" />
               <strong>Dodge</strong>
               <p className="text-xs text-foreground/70">
                 Warnings show where hazards enter. Near misses earn bonus
@@ -124,7 +124,7 @@ export default function MainMenu() {
               </p>
             </li>
             <li className="flex flex-col items-center gap-1 px-3 py-3 text-center">
-              <StarIcon className="text-4xl text-fuchsia-400" />
+              <StarIcon className="text-4xl text-blue-400" />
               <strong>Survive 60s</strong>
               <p className="text-xs text-foreground/70">
                 One hit ends the run. Six phases get progressively harder.
@@ -149,7 +149,7 @@ export default function MainMenu() {
             />
             <Stat
               className="sm:col-span-3"
-              icon={<TimerIcon className="text-3xl text-cyan-300" />}
+              icon={<TimerIcon className="text-3xl text-sky-400" />}
               label="Longest run"
               value={formatTime(stats.longestSurvival)}
             />
@@ -176,6 +176,10 @@ export default function MainMenu() {
             Stats are saved only in this browser. Clearing your browser data
             will erase them.
           </p>
+          <Link href="/leaderboard" className="btn-dark mt-3 w-full">
+            <TrophyIcon className="text-xl" />
+            View leaderboard
+          </Link>
         </section>
       </div>
     </main>

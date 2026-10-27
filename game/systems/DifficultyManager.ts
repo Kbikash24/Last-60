@@ -26,7 +26,7 @@ export const PHASES: readonly PhaseConfig[] = [
     wallEvery: 0,
     wallGap: 0,
     maxOrbs: 0,
-    color: 0x4ecbff,
+    color: 0x5aa8ff,
   },
   {
     index: 2,

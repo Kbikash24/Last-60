@@ -14,10 +14,23 @@ npm run build
 
 ## Structure
 
-- `app/` – routes (`/` menu, `/game`)
+- `app/` – routes (`/` menu, `/game`, `/leaderboard`, `/api/*`)
 - `components/` – React UI (menu, HUD, countdown, results, share)
 - `game/` – Phaser scene, entities, and systems (difficulty, spawner, scoring); `controller.ts` bridges the scene to React
 - `lib/` – `localStorage` stats and the WebAudio synth
+
+## Leaderboard setup
+
+The global leaderboard uses Supabase through server-only API routes (`app/api`). Without the variables below the game still works and the leaderboard simply stays hidden.
+
+1. Create a Supabase project and run `supabase/schema.sql` in the SQL editor.
+2. Set these environment variables (Vercel: Project Settings > Environment Variables; locally: `.env.local`, which is git-ignored):
+   - `SUPABASE_URL` – the project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` – the service-role key (server only, never expose it to the browser)
+   - `RUN_TOKEN_SECRET` – any long random string, used to sign run-start tokens
+3. Redeploy.
+
+Scores are checked on the server against the scoring rules and the time a run actually took, and each run token works once. This stops casual tampering but cannot make a client-side game fully cheat-proof.
 
 ## Scoring
 
