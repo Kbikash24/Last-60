@@ -48,11 +48,16 @@ export default function MainMenu() {
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col items-center justify-center gap-7 px-4 py-8 text-center sm:gap-8">
       <header className="anim-fade-in flex flex-col items-center gap-3">
         <h1 className="flex items-baseline text-6xl font-black italic leading-none tracking-tight sm:text-8xl md:text-9xl">
-          <Logo3D text="LAST" className="logo-last" />
+          <Logo3D text="LAST" className="logo-last" />{" "}
           <Logo3D text="60" className="logo-60" />
         </h1>
         <p className="text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-sky-200/90 sm:text-sm sm:tracking-[0.4em]">
           One Minute. One Life. One More Run.
+        </p>
+        <p className="max-w-xl text-sm text-foreground/80 sm:text-base">
+          LAST 60 is a free neon arcade survival game you can play in your
+          browser. Dodge hazards for 60 seconds across six escalating phases and
+          beat your personal best — no download or login needed.
         </p>
       </header>
 

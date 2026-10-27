@@ -24,7 +24,7 @@ body {
   /* Dark overlay keeps the HUD and menu text readable over the image. */
   background:
     linear-gradient(rgba(7, 6, 15, 0.5), rgba(7, 6, 15, 0.7)),
-    url("/arena-bg.png") center / cover no-repeat,
+    url("/arena-bg.webp") center / cover no-repeat,
     var(--background);
   background-attachment: fixed;
   color: var(--foreground);
@@ -90,6 +90,11 @@ canvas {
     0.096em 0.096em 0 var(--deep-2),
     0.108em 0.108em 0 var(--deep-2),
     0.12em 0.12em 0 var(--deep-2);
+}
+
+/* Text comes from an attribute so crawlers see the logo words only once. */
+.logo-3d-back::before {
+  content: attr(data-text);
 }
 
 .logo-last {
