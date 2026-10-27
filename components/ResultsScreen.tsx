@@ -117,7 +117,7 @@ export default function ResultsScreen({
             </button>
           </div>
           <span
-            className="text-2xl font-black text-fuchsia-400"
+            className="text-2xl font-black text-violet-400"
             aria-hidden="true"
           >
             »
